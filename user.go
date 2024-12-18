@@ -86,6 +86,28 @@ func (u *User) DoMessage(msg string) {
 			u.sendMsg("您已经更新用户名:" + u.Name + "\n")
 		}
 
+	} else if len(msg) > 4 && msg[:3] == "to|" {
+		// 获取对方用户名
+		toName := strings.Split(msg, "|")[1]
+		if toName == "" {
+			u.sendMsg("消息格式不正确, 请使用 \"to|张三|你好\" 格式. \n")
+			return
+		}
+		// 根据用户名查找对方 User 对象
+		toUser, ok := u.Server.OnlineMap[toName]
+		if !ok {
+			u.sendMsg("您输入的用户名不存在. \n")
+			return
+		}
+		// 获取发送消息
+		toMsg := strings.Split(msg, "|")[2]
+		if toMsg == "" {
+			u.sendMsg("无消息内容, 请重新发送\n")
+			return
+		}
+		// 发送消息
+		toUser.sendMsg(u.Name + "对您说: " + toMsg + "\n")
+
 	} else {
 		u.Server.BroadCast(u, msg)
 	}
