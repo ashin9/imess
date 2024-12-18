@@ -1,9 +1,10 @@
 package main
 
 import (
-	"flag"
 	"fmt"
+	"io"
 	"net"
+	"os"
 )
 
 type Client struct {
@@ -54,6 +55,30 @@ func (client *Client) menu() bool {
 	}
 }
 
+func (client *Client) revResponse() {
+	io.Copy(os.Stdout, client.Conn)
+
+	// 等价于
+	// for {
+	// 	buf := make([]byte, 4096)
+	// 	client.Conn.Read(buf)
+	// 	fmt.Println(buf)
+	// }
+}
+
+func (client *Client) UpdateName() bool {
+	fmt.Println(">>>>请输入更改后的用户名:")
+	fmt.Scanln(&client.Name)
+
+	sendMsg := "rename|" + client.Name + "\n"
+	_, err := client.Conn.Write([]byte(sendMsg))
+	if err != nil {
+		fmt.Println("conn write err:", err)
+		return false
+	}
+	return true
+}
+
 func (client *Client) Run() {
 	for client.Mode != 0 {
 		for !client.menu() {
@@ -68,32 +93,10 @@ func (client *Client) Run() {
 			fmt.Println("私聊模式...")
 			break
 		case 3:
-			fmt.Println("更新用户名...")
+			// fmt.Println("更新用户名...")
+			client.UpdateName()
 			break
 		}
 
 	}
-}
-
-var serverIp string
-var serverPort int
-
-func init() {
-	flag.StringVar(&serverIp, "ip", "127.0.0.1", "设置服务器 IP (默认为 127.0.0.1)")
-	flag.IntVar(&serverPort, "port", 8888, "设置服务器 Port (默认为 8888)")
-}
-
-func main() {
-	// 命令行解析
-	flag.Parse()
-
-	client := NewClient(serverIp, serverPort)
-	if client == nil {
-		fmt.Println(">>>> 连接服务器失败...")
-		return
-	}
-	fmt.Println(">>>> 连接服务器成功...")
-
-	// 启动客户端业务
-	client.Run()
 }
