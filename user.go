@@ -50,9 +50,24 @@ func (u *User) Offline() {
 	u.Server.BroadCast(u, "已下线")
 }
 
+// 给当前用户客户端发送消息
+func (u *User) sendMsg(msg string) {
+	u.Conn.Write([]byte(msg))
+}
+
 // 用户处理消息
 func (u *User) DoMessage(msg string) {
-	u.Server.BroadCast(u, msg)
+	// 查询在线用户
+	if msg == "who" {
+		u.Server.mapLock.Lock()
+		for _, user := range u.Server.OnlineMap {
+			onlineMsg := "[" + user.Addr + "]" + user.Name + ":" + "在线...\n"
+			u.sendMsg(onlineMsg)
+		}
+		u.Server.mapLock.Unlock()
+	} else {
+		u.Server.BroadCast(u, msg)
+	}
 }
 
 func (u *User) ListenMessage() {
